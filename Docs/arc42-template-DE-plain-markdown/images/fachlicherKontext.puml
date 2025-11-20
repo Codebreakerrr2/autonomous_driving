@@ -1,0 +1,23 @@
+@startuml
+actor Camera
+actor TinyCar
+
+rectangle "KI-Pipeline & Szenengraph" #yellow {
+    component "Lane Detection" as Lane
+    component "Object Detection (YOLO)" as YOLO
+    component "Depth Estimation (MiDaS)" as Depth
+    component "Scene Graph Builder" as Graph
+    component "Decision Model" as Decision
+}
+
+Camera --> Lane : Bild
+Camera --> YOLO : Bild
+Camera --> Depth : Bild
+
+Lane --> Graph : Lanes (2D/3D)
+YOLO --> Graph : Objekte
+Depth --> Graph : Depthmap
+
+Graph --> Decision : Szenengraph
+Decision --> TinyCar : Steuerkommandos
+@enduml

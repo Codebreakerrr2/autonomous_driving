@@ -1,0 +1,34 @@
+@startuml
+title Autonomes Fahren – Wahrnehmungs- & Szenengraph-System (Bausteinsicht)
+
+package "Sensor Input" {
+    component Camera as CAM
+}
+
+package "Perception Module" {
+    component "Lane Detector" as LANE
+    component "YOLO Object Detector" as YOLO
+    component "MiDaS Depth Estimator" as MIDAS
+}
+
+package "Fusion Layer" {
+    component "Scene Graph Builder" as SGB
+}
+
+package "Decision Layer" {
+    component "Decision Module" as DM
+}
+
+CAM --> LANE : RGB Frame
+CAM --> YOLO : RGB Frame
+CAM --> MIDAS : RGB Frame
+
+LANE --> SGB : Lanes\n(Polylines)
+YOLO --> SGB : Objects\n(BBoxes, Klassen)
+MIDAS --> SGB : Depth Map\n(HxW numpy)
+
+SGB --> DM : Scene Graph\n(Nodes + Edges)
+
+DM --> CAM : (optional) Debug Info
+
+@enduml

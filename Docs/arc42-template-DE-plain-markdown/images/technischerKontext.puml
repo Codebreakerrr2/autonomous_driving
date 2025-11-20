@@ -1,0 +1,22 @@
+@startuml
+node "Host System" {
+    component "Video Capture Module" as Video
+    component "Lane Model (unknown)" as Lane
+    component "YOLOv8 Model" as YOLO
+    component "MiDaS Model" as Depth
+    component "Scene Graph Engine" as Graph
+    component "Decision Engine" as Decision
+    component "Control Output " as Ctrl
+}
+
+Video --> Lane : Frame (NumPy)
+Video --> YOLO : Frame (NumPy)
+Video --> Depth : Frame (NumPy)
+
+Lane --> Graph : Lane Points
+YOLO --> Graph : Bounding Boxes
+Depth --> Graph : Depth Map
+
+Graph --> Decision : Graph JSON
+Decision --> Ctrl : Steuerkommandos
+@enduml
