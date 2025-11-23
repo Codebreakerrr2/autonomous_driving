@@ -24,7 +24,8 @@ Ziel ist es, aus dem Kamerafeed ein konsistentes 3D-Szenenmodell (Scene Graph) a
 
 * Sauberer Schnittstellendefinition, sodass einzelne Komponenten austauschbar bleiben.
 
-* Die Software bildet die Grundlage für ein erweiterbares System, das später für größere autonome Systeme, Robotik oder Simulationen genutzt werden kann.
+* Die Software bildet die Grundlage für ein erweiterbares System, das später für größere autonome Systeme, Robotik oder Simulationen genutzt werden kann. 
+* Decision Model Entwickling
 
 ## Aufgabenstellung
 Die Kernaufgabe besteht darin:
