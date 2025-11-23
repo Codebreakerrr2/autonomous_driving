@@ -10,7 +10,7 @@ class ICameraProvider(ABC):
         Kann aus Kamera, Video oder Simulation kommen.
         """
         pass
-a
+
     @abstractmethod
     class IControlOutput(ABC):
 
