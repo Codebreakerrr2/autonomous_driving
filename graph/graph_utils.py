@@ -1,48 +1,58 @@
-from interfaces.graph import IDistanceCalculator, IPositionEstimator
+from typing import Dict
+
+from graph.node import LaneNode, Object_Node
+from graph.nodes_types import NodeType
+from graph.scene_graph import Graph
+from interfaces.geometry import IDistanceCalculator, IPositionEstimator
+from interfaces.graph import IGraphBuilder
 
 
-class DepthPositionEstimator(IPositionEstimator):
-    """
-    Nimmt eine Depth-Map + YOLO-Bounding-Box und erzeugt (x, y, z).
-    """
-    def __init__(self, fx, fy, cx, cy):
-        self.fx = fx
-        self.fy = fy
-        self.cx = cx
-        self.cy = cy
-        self.depth_map = None
+class SimpleGraphBuilder(IGraphBuilder):
+    def __init__(self, position_estimator: IPositionEstimator, distance_calculator: IDistanceCalculator):
+        self.position_estimator = position_estimator
+        self.distance_calculator = distance_calculator
+        self.next_id = 0  # automatische Node-ID
 
-    def update_depth(self, depth_map: np.ndarray):
-        self.depth_map = depth_map
+    def build(self, perception_output: Dict) -> "Graph":
+        """
+        Baut einen Graphen aus perception output:
+        perception_output = {
+            "objects": [...],
+            "lanes": [...]
+        }
+        """
+        graph = Graph()
 
-    def estimate_3d(self, node):
-        if self.depth_map is None:
-            return None
+        #  Lane Nodes erstellen
+        for lane in perception_output.get("lanes", []):
+            lane_node = LaneNode(
+                id=self.next_id,
+                coordiantes=lane.get("coordinates", None),
+                node_type=NodeType.GREENLANE
+            )
+            graph.add_node(lane_node)
+            self.next_id += 1
 
-        # Mittelpunkt der Bounding Box holen
-        u = int((node.x1 + node.x2) / 2)
-        v = int((node.y1 + node.y2) / 2)
+        #  Object Nodes erstellen
+        for obj in perception_output.get("objects", []):
+            pos = self.position_estimator.estimate_3d(obj)
+            obj_node = Object_Node(
+                id=self.next_id,
+                node_type=NodeType.UNKNOWN,
+                x=pos[0] if pos else None,
+                y=pos[1] if pos else None,
+                z=pos[2] if pos else None
+            )
+            graph.add_node(obj_node)
+            self.next_id += 1
 
-        depth = float(self.depth_map[v, u])
-        if depth <= 0:
-            return None
+        #  Edges erstellen (alle paarweise, z.B. für Abstand)
+        node_ids = list(graph.nodes.keys())
+        for i, id1 in enumerate(node_ids):
+            for id2 in node_ids[i+1:]:
+                node_a = graph.nodes[id1]
+                node_b = graph.nodes[id2]
+                dist = self.distance_calculator.compute(node_a, node_b)
+                graph.add_edge(id1, id2, weight=dist)
 
-        # Reale Welt Koordinaten hier eventuell kamera etc kalibieren
-        X = (u - self.cx) * depth / self.fx
-        Y = (v - self.cy) * depth / self.fy
-        Z = depth
-
-        return X, Y, Z
-
-    # ob das sinn macht?
-    class EuclideanDistance(IDistanceCalculator):
-
-        def compute(self, a, b) -> float:
-            if None in (a.x, a.y, a.z, b.x, b.y, b.z):
-                return float("inf")
-
-            dx = a.x - b.x
-            dy = a.y - b.y
-            dz = a.z - b.z
-
-            return math.sqrt(dx * dx + dy * dy + dz * dz)
+        return graph
